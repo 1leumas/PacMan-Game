@@ -113,11 +113,21 @@ function animate() {
   boundaries.forEach((boundary) => {
     //forEach loop to use the method draw in boundaryClass for each boundary within the array
     boundary.draw();
+    //collision
+    if (
+      player.position.y - player.radius + player.velocity.y <= boundary.position.y + boundary.height &&
+      player.position.x + player.radius + player.velocity.x >= boundary.position.x &&
+      player.position.y + player.radius + player.velocity.y >= boundary.position.y &&
+      player.position.x - player.radius + player.velocity.x <= boundary.position.x + boundary.width
+    ) {
+      player.velocity.y = 0;
+      player.velocity.x = 0;
+    }
   });
   //put player in game
   player.update();
-  player.velocity.y = 0
-  player.velocity.x = 0
+//   player.velocity.y = 0;
+//   player.velocity.x = 0;
 
   if (keys.w.pressed && lastKey === `w`) {
     player.velocity.y = -3;
@@ -137,23 +147,22 @@ addEventListener(`keydown`, ({ key }) => {
   switch (key) {
     case `w`:
       keys.w.pressed = true;
-      lastKey = `w`
+      lastKey = `w`;
       break;
     case `a`:
       keys.a.pressed = true;
-      lastKey = `a`
+      lastKey = `a`;
       break;
     case `s`:
       keys.s.pressed = true;
-      lastKey = `s`
+      lastKey = `s`;
       break;
     case `d`:
       keys.d.pressed = true;
-      lastKey = `d`
+      lastKey = `d`;
       break;
   }
 });
-
 
 //when key w/a/s/d is unpressed remove velocity
 addEventListener(`keyup`, ({ key }) => {
