@@ -1,153 +1,18 @@
-// Get the canvas element and its 2D rendering context
-const canvas = document.querySelector(`canvas`);
-const c = canvas.getContext(`2d`);
-const scoreEl = document.querySelector(`#scoreEl`);
+const canvas = document.querySelector("canvas");
+const c = canvas.getContext("2d");
 
-// Set the canvas dimensions to fill the entire screen
+const scoreEl = document.querySelector("#scoreEl");
+
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-// Define the Boundary class for creating blue square objects
-class Boundary {
-  static width = 40;
-  static height = 40;
-
-  constructor({ position, image }) {
-    this.position = position;
-    this.width = 40;
-    this.height = 40;
-    this.image = image;
-  }
-
-  // Method to draw the boundary object on the screen
-  draw() {
-    // c.fillStyle = `blue`;
-    // c.fillRect(this.position.x, this.position.y, this.width, this.height);
-
-    c.drawImage(this.image, this.position.x, this.position.y);
-  }
-}
-
-// Define the Player class for creating the yellow Pacman object
-class Player {
-  constructor({ position, velocity }) {
-    this.position = position;
-    this.velocity = velocity;
-    this.radius = 15;
-
-    this.radians = 0.7;
-    this.openRate = 0.03;
-    this.rotation = 0
-  }
-
-  // Method to draw the Pacman object on the screen
-  draw() {
-    c.save();
-
-    c.translate(this.position.x, this.position.y)
-    c.rotate(this.rotation)
-    c.translate(-this.position.x, -this.position.y)
-
-    c.beginPath();
-    c.arc(
-      this.position.x,
-      this.position.y,
-      this.radius,
-      this.radians,
-      Math.PI * 2 - this.radians
-    );
-    c.lineTo(this.position.x, this.position.y);
-    c.fillStyle = `yellow`;
-    c.fill();
-    c.closePath;
-
-    c.restore();
-  }
-
-  // Method to update the position of the Pacman object
-  update() {
-    this.draw();
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-
-    if (this.radians < 0 || this.radians > 0.7) this.openRate = -this.openRate;
-
-    this.radians += this.openRate;
-  }
-}
-
-class Ghost {
-  static speed = 1;
-
-  constructor({ position, velocity, color = `red` }) {
-    this.position = position;
-    this.velocity = velocity;
-    this.radius = 15;
-    this.color = color;
-    this.prevCollisions = [];
-    this.speed = 1;
-    this.scared = false;
-  }
-
-  // Method to draw the Pacman object on the screen
-  draw() {
-    c.beginPath();
-    c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-    c.fillStyle = this.scared ? `blue` : this.color;
-    c.fill();
-    c.closePath;
-  }
-
-  // Method to update the position of the Pacman object
-  update() {
-    this.draw();
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-  }
-}
-
-class Pellet {
-  constructor({ position }) {
-    this.position = position;
-    this.radius = 3;
-  }
-
-  // Method to draw the Pacman object on the screen
-  draw() {
-    c.beginPath();
-    c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-    c.fillStyle = `white`;
-    c.fill();
-    c.closePath();
-  }
-}
-
-class PowerUp {
-  constructor({ position }) {
-    this.position = position;
-    this.radius = 8.5;
-  }
-
-  // Method to draw the Pacman object on the screen
-  draw() {
-    c.beginPath();
-    c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-    c.fillStyle = `white`;
-    c.fill();
-    c.closePath();
-  }
-}
+const pellets = [];
 
 const powerUps = [];
-// Array to store all the pellets (white balls)
-const pellets = [];
-// Array to store all the boundaries (blue squares)
-const boundaries = [];
-//array to store all the Ghosts (Colored balls)
 const ghosts = [
   new Ghost({
     position: {
-      x: Boundary.width * 8 + Boundary.width / 2,
+      x: Boundary.width * 6 + Boundary.width / 2,
       y: Boundary.height + Boundary.height / 2,
     },
     velocity: {
@@ -164,11 +29,9 @@ const ghosts = [
       x: Ghost.speed,
       y: 0,
     },
-    color: `pink`,
+    color: "pink",
   }),
 ];
-
-// Create a player object (yellow Pacman)
 const player = new Player({
   position: {
     x: Boundary.width + Boundary.width / 2,
@@ -179,355 +42,40 @@ const player = new Player({
     y: 0,
   },
 });
-
-// Object to track the state of keyboard keys
 const keys = {
-  w: { pressed: false },
-  a: { pressed: false },
-  s: { pressed: false },
-  d: { pressed: false },
+  w: {
+    pressed: false,
+  },
+  a: {
+    pressed: false,
+  },
+  s: {
+    pressed: false,
+  },
+  d: {
+    pressed: false,
+  },
 };
 
-let lastKey = ``;
+let lastKey = "";
 let score = 0;
-
-// Map representing the game layout
-const map = [
-  ["1", "-", "-", "-", "-", "-", "-", "-", "-", "-", "2"],
-  ["|", ".", ".", ".", ".", ".", ".", ".", ".", ".", "|"],
-  ["|", ".", "b", ".", "[", "7", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", "_", ".", ".", ".", ".", "|"],
-  ["|", ".", "[", "]", ".", " ", ".", "[", "]", ".", "|"],
-  ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
-  ["|", ".", "b", ".", "[", "+", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", "_", ".", ".", ".", ".", "|"],
-  ["|", ".", "[", "]", ".", " ", ".", "[", "]", ".", "|"],
-  ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
-  ["|", ".", "b", ".", "[", "5", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", ".", ".", ".", ".", "p", "|"],
-  ["4", "-", "-", "-", "-", "-", "-", "-", "-", "-", "3"],
-];
-
-function createImage(src) {
-  const image = new Image();
-  image.src = src;
-  return image;
-}
-
-// Iterate over each row of the map
-map.forEach((row, i) => {
-  row.forEach((symbol, j) => {
-    switch (symbol) {
-      case "-":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/pipeHorizontal.png"),
-          })
-        );
-        break;
-      case "|":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/pipeVertical.png"),
-          })
-        );
-        break;
-      case "1":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/pipeCorner1.png"),
-          })
-        );
-        break;
-      case "2":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/pipeCorner2.png"),
-          })
-        );
-        break;
-      case "3":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/pipeCorner3.png"),
-          })
-        );
-        break;
-      case "4":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/pipeCorner4.png"),
-          })
-        );
-        break;
-      case "b":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: Boundary.width * j,
-              y: Boundary.height * i,
-            },
-            image: createImage("./img/block.png"),
-          })
-        );
-        break;
-      case "[":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            image: createImage("./img/capLeft.png"),
-          })
-        );
-        break;
-      case "]":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            image: createImage("./img/capRight.png"),
-          })
-        );
-        break;
-      case "_":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            image: createImage("./img/capBottom.png"),
-          })
-        );
-        break;
-      case "^":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            image: createImage("./img/capTop.png"),
-          })
-        );
-        break;
-      case "+":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            image: createImage("./img/pipeCross.png"),
-          })
-        );
-        break;
-      case "5":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            color: "blue",
-            image: createImage("./img/pipeConnectorTop.png"),
-          })
-        );
-        break;
-      case "6":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            color: "blue",
-            image: createImage("./img/pipeConnectorRight.png"),
-          })
-        );
-        break;
-      case "7":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            color: "blue",
-            image: createImage("./img/pipeConnectorBottom.png"),
-          })
-        );
-        break;
-      case "8":
-        boundaries.push(
-          new Boundary({
-            position: {
-              x: j * Boundary.width,
-              y: i * Boundary.height,
-            },
-            image: createImage("./img/pipeConnectorLeft.png"),
-          })
-        );
-        break;
-      case ".":
-        pellets.push(
-          new Pellet({
-            position: {
-              x: j * Boundary.width + Boundary.width / 2,
-              y: i * Boundary.height + Boundary.height / 2,
-            },
-          })
-        );
-        break;
-      case "p":
-        powerUps.push(
-          new PowerUp({
-            position: {
-              x: j * Boundary.width + Boundary.width / 2,
-              y: i * Boundary.height + Boundary.height / 2,
-            },
-          })
-        );
-        break;
-    }
-  });
-});
-
-// Function to check collision between a circle and a rectangle
-function circleCollidesWithRectangle({ circle, rectangle }) {
-  const padding = Boundary.width / 2 - circle.radius - 1;
-  return (
-    circle.position.y - circle.radius + circle.velocity.y <=
-      rectangle.position.y + rectangle.height + padding &&
-    circle.position.x + circle.radius + circle.velocity.x >=
-      rectangle.position.x - padding &&
-    circle.position.y + circle.radius + circle.velocity.y >=
-      rectangle.position.y - padding &&
-    circle.position.x - circle.radius + circle.velocity.x <=
-      rectangle.position.x + rectangle.width + padding
-  );
-}
-
 let animationId;
-// Function to animate the game
+
+const boundaries = generateBoundaries();
+
 function animate() {
   animationId = requestAnimationFrame(animate);
-  console.log();
   c.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Update player velocity based on collision
-  if (keys.w.pressed && lastKey === `w`) {
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        circleCollidesWithRectangle({
-          circle: { ...player, velocity: { x: 0, y: -4 } },
-          rectangle: boundary,
-        })
-      ) {
-        player.velocity.y = 0;
-        break;
-      } else {
-        player.velocity.y = -4;
-      }
-    }
-  } else if (keys.a.pressed && lastKey === "a") {
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        circleCollidesWithRectangle({
-          circle: {
-            ...player,
-            velocity: {
-              x: -4,
-              y: 0,
-            },
-          },
-          rectangle: boundary,
-        })
-      ) {
-        player.velocity.x = 0;
-        break;
-      } else {
-        player.velocity.x = -4;
-      }
-    }
-  } else if (keys.s.pressed && lastKey === "s") {
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        circleCollidesWithRectangle({
-          circle: {
-            ...player,
-            velocity: {
-              x: 0,
-              y: 4,
-            },
-          },
-          rectangle: boundary,
-        })
-      ) {
-        player.velocity.y = 0;
-        break;
-      } else {
-        player.velocity.y = 4;
-      }
-    }
-  } else if (keys.d.pressed && lastKey === "d") {
-    for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i];
-      if (
-        circleCollidesWithRectangle({
-          circle: {
-            ...player,
-            velocity: {
-              x: 4,
-              y: 0,
-            },
-          },
-          rectangle: boundary,
-        })
-      ) {
-        player.velocity.x = 0;
-        break;
-      } else {
-        player.velocity.x = 4;
-      }
-    }
-  }
+  if (keys.w.pressed && lastKey === "w") player.moveUp(boundaries);
+  else if (keys.a.pressed && lastKey === "a") player.moveLeft(boundaries);
+  else if (keys.s.pressed && lastKey === "s") player.moveDown(boundaries);
+  else if (keys.d.pressed && lastKey === "d") player.moveRight(boundaries);
 
   // detect collision between ghosts and player
   for (let i = ghosts.length - 1; 0 <= i; i--) {
     const ghost = ghosts[i];
-    // ghost touch player
+    // ghost touches player
     if (
       Math.hypot(
         ghost.position.x - player.position.x,
@@ -539,21 +87,23 @@ function animate() {
         ghosts.splice(i, 1);
       } else {
         cancelAnimationFrame(animationId);
+        console.log("you lose");
       }
     }
   }
 
-  //win condition
+  // win condition goes here
   if (pellets.length === 0) {
+    console.log("you win");
     cancelAnimationFrame(animationId);
   }
 
-  //powerups
+  // power ups go
   for (let i = powerUps.length - 1; 0 <= i; i--) {
     const powerUp = powerUps[i];
     powerUp.draw();
 
-    //player collides with powerup
+    // player collides with powerup
     if (
       Math.hypot(
         powerUp.position.x - player.position.x,
@@ -562,19 +112,19 @@ function animate() {
       powerUp.radius + player.radius
     ) {
       powerUps.splice(i, 1);
-      //make ghosts scared
 
+      // make ghosts scared
       ghosts.forEach((ghost) => {
         ghost.scared = true;
 
         setTimeout(() => {
           ghost.scared = false;
-        }, 3000);
+        }, 5000);
       });
     }
   }
 
-  //touch pellets | Add score
+  // touch pellets here
   for (let i = pellets.length - 1; 0 <= i; i--) {
     const pellet = pellets[i];
     pellet.draw();
@@ -592,7 +142,6 @@ function animate() {
     }
   }
 
-  // Draw and update each boundary
   boundaries.forEach((boundary) => {
     boundary.draw();
 
@@ -602,28 +151,14 @@ function animate() {
         rectangle: boundary,
       })
     ) {
-      player.velocity.y = 0;
       player.velocity.x = 0;
+      player.velocity.y = 0;
     }
   });
-
-  // Update and draw the player (Pacman)
   player.update();
 
   ghosts.forEach((ghost) => {
     ghost.update();
-
-    // ghost touches player
-    if (
-      Math.hypot(
-        ghost.position.x - player.position.x,
-        ghost.position.y - player.position.y
-      ) <
-        ghost.radius + player.radius &&
-      !ghost.scared
-    ) {
-      cancelAnimationFrame(animationId);
-    }
 
     const collisions = [];
     boundaries.forEach((boundary) => {
@@ -691,6 +226,7 @@ function animate() {
         collisions.push("down");
       }
     });
+
     if (collisions.length > ghost.prevCollisions.length)
       ghost.prevCollisions = collisions;
 
@@ -731,55 +267,11 @@ function animate() {
       ghost.prevCollisions = [];
     }
   });
+
   if (player.velocity.x > 0) player.rotation = 0;
   else if (player.velocity.x < 0) player.rotation = Math.PI;
   else if (player.velocity.y > 0) player.rotation = Math.PI / 2;
   else if (player.velocity.y < 0) player.rotation = Math.PI * 1.5;
-}
+} // end of animate()
 
-// Start the animation loop
 animate();
-
-// Event listener to handle keydown events
-addEventListener("keydown", ({ key }) => {
-  switch (key) {
-    case "w":
-      keys.w.pressed = true;
-      lastKey = "w";
-      break;
-    case "a":
-      keys.a.pressed = true;
-      lastKey = "a";
-      break;
-    case "s":
-      keys.s.pressed = true;
-      lastKey = "s";
-      break;
-    case "d":
-      keys.d.pressed = true;
-      lastKey = "d";
-      break;
-  }
-});
-
-// Event listener to handle keyup events
-addEventListener("keyup", ({ key }) => {
-  switch (key) {
-    case "w":
-      keys.w.pressed = false;
-
-      break;
-    case "a":
-      keys.a.pressed = false;
-
-      break;
-    case "s":
-      keys.s.pressed = false;
-
-      break;
-    case "d":
-      keys.d.pressed = false;
-
-      break;
-  }
-});
