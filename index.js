@@ -520,6 +520,11 @@ function animate() {
     }
   }
 
+  //win condition
+  if (pellets.length === 0){
+    cancelAnimationFrame(animationId)
+  }
+
   //powerups
   for (let i = powerUps.length - 1; 0 <= i; i--) {
     const powerUp = powerUps[i];
