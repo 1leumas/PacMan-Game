@@ -95,9 +95,27 @@ class Pellet {
     c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
     c.fillStyle = `white`;
     c.fill();
-    c.closePath;
+    c.closePath();
   }
 }
+
+class PowerUp {
+  constructor({ position }) {
+    this.position = position;
+    this.radius = 8.5;
+  }
+
+  // Method to draw the Pacman object on the screen
+  draw() {
+    c.beginPath();
+    c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+    c.fillStyle = `white`;
+    c.fill();
+    c.closePath();
+  }
+}
+
+const powerUps = [];
 // Array to store all the pellets (white balls)
 const pellets = [];
 // Array to store all the boundaries (blue squares)
@@ -123,8 +141,8 @@ const ghosts = [
       x: Ghost.speed,
       y: 0,
     },
-    color: `pink`
-  })
+    color: `pink`,
+  }),
 ];
 
 // Create a player object (yellow Pacman)
@@ -163,7 +181,7 @@ const map = [
   ["|", ".", "[", "]", ".", " ", ".", "[", "]", ".", "|"],
   ["|", ".", ".", ".", ".", "^", ".", ".", ".", ".", "|"],
   ["|", ".", "b", ".", "[", "5", "]", ".", "b", ".", "|"],
-  ["|", ".", ".", ".", ".", ".", ".", ".", ".", ".", "|"],
+  ["|", ".", ".", ".", ".", ".", ".", ".", ".", "p", "|"],
   ["4", "-", "-", "-", "-", "-", "-", "-", "-", "-", "3"],
 ];
 
@@ -366,6 +384,16 @@ map.forEach((row, i) => {
           })
         );
         break;
+      case "p":
+        powerUps.push(
+          new PowerUp({
+            position: {
+              x: j * Boundary.width + Boundary.width / 2,
+              y: i * Boundary.height + Boundary.height / 2,
+            },
+          })
+        );
+        break;
     }
   });
 });
@@ -408,73 +436,118 @@ function animate() {
         player.velocity.y = -4;
       }
     }
-  } else if (keys.a.pressed && lastKey === 'a') {
+  } else if (keys.a.pressed && lastKey === "a") {
     for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i]
+      const boundary = boundaries[i];
       if (
         circleCollidesWithRectangle({
           circle: {
             ...player,
             velocity: {
               x: -4,
-              y: 0
-            }
+              y: 0,
+            },
           },
-          rectangle: boundary
+          rectangle: boundary,
         })
       ) {
-        player.velocity.x = 0
-        break
+        player.velocity.x = 0;
+        break;
       } else {
-        player.velocity.x = -4
+        player.velocity.x = -4;
       }
     }
-  } else if (keys.s.pressed && lastKey === 's') {
+  } else if (keys.s.pressed && lastKey === "s") {
     for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i]
+      const boundary = boundaries[i];
       if (
         circleCollidesWithRectangle({
           circle: {
             ...player,
             velocity: {
               x: 0,
-              y: 4
-            }
+              y: 4,
+            },
           },
-          rectangle: boundary
+          rectangle: boundary,
         })
       ) {
-        player.velocity.y = 0
-        break
+        player.velocity.y = 0;
+        break;
       } else {
-        player.velocity.y = 4
+        player.velocity.y = 4;
       }
     }
-  } else if (keys.d.pressed && lastKey === 'd') {
+  } else if (keys.d.pressed && lastKey === "d") {
     for (let i = 0; i < boundaries.length; i++) {
-      const boundary = boundaries[i]
+      const boundary = boundaries[i];
       if (
         circleCollidesWithRectangle({
           circle: {
             ...player,
             velocity: {
               x: 4,
-              y: 0
-            }
+              y: 0,
+            },
           },
-          rectangle: boundary
+          rectangle: boundary,
         })
       ) {
-        player.velocity.x = 0
-        break
+        player.velocity.x = 0;
+        break;
       } else {
-        player.velocity.x = 4
+        player.velocity.x = 4;
       }
     }
   }
 
+  // detect collision between ghosts and player
+  for (let i = ghosts.length - 1; 0 <= i; i--) {
+    const ghost = ghosts[i];
+    // ghost touch player
+    if (
+      Math.hypot(
+        ghost.position.x - player.position.x,
+        ghost.position.y - player.position.y
+      ) <
+        ghost.radius + player.radius
+    ) {
+      if (ghost.scared) {
+        ghosts.splice(i, 1);
+      } else {
+        cancelAnimationFrame(animationId);
+      }
+    }
+  }
+
+  //powerups
+  for (let i = powerUps.length - 1; 0 <= i; i--) {
+    const powerUp = powerUps[i];
+    powerUp.draw();
+
+    //player collides with powerup
+    if (
+      Math.hypot(
+        powerUp.position.x - player.position.x,
+        powerUp.position.y - player.position.y
+      ) <
+      powerUp.radius + player.radius
+    ) {
+      powerUps.splice(i, 1);
+      //make ghosts scared
+
+      ghosts.forEach((ghost) => {
+        ghost.scared = true;
+
+        setTimeout(() => {
+          ghost.scared = false;
+        }, 3000);
+      });
+    }
+  }
+
   //touch pellets | Add score
-  for (let i = pellets.length - 1; 0 < i; i--) {
+  for (let i = pellets.length - 1; 0 <= i; i--) {
     const pellet = pellets[i];
     pellet.draw();
 
@@ -512,87 +585,88 @@ function animate() {
   ghosts.forEach((ghost) => {
     ghost.update();
 
+    // ghost touches player
     if (
-        Math.hypot(
-            ghost.position.x - player.position.x,
-            ghost.position.y - player.position.y
-        ) <
-        ghost.radius + player.radius
+      Math.hypot(
+        ghost.position.x - player.position.x,
+        ghost.position.y - player.position.y
+      ) <
+        ghost.radius + player.radius &&
+      !ghost.scared
     ) {
-        cancelAnimationFrame(animationId)
+      cancelAnimationFrame(animationId);
     }
 
     const collisions = [];
     boundaries.forEach((boundary) => {
-        if (
-            !collisions.includes('right') &&
-            circleCollidesWithRectangle({
-              circle: {
-                ...ghost,
-                velocity: {
-                  x: ghost.speed,
-                  y: 0
-                }
-              },
-              rectangle: boundary
-            })
-          ) {
-            collisions.push('right')
-          }
+      if (
+        !collisions.includes("right") &&
+        circleCollidesWithRectangle({
+          circle: {
+            ...ghost,
+            velocity: {
+              x: ghost.speed,
+              y: 0,
+            },
+          },
+          rectangle: boundary,
+        })
+      ) {
+        collisions.push("right");
+      }
 
       if (
-        !collisions.includes('left') &&
+        !collisions.includes("left") &&
         circleCollidesWithRectangle({
           circle: {
             ...ghost,
             velocity: {
               x: -ghost.speed,
-              y: 0
-            }
+              y: 0,
+            },
           },
-          rectangle: boundary
+          rectangle: boundary,
         })
       ) {
-        collisions.push('left')
+        collisions.push("left");
       }
 
       if (
-        !collisions.includes('up') &&
+        !collisions.includes("up") &&
         circleCollidesWithRectangle({
           circle: {
             ...ghost,
             velocity: {
               x: 0,
-              y: -ghost.speed
-            }
+              y: -ghost.speed,
+            },
           },
-          rectangle: boundary
+          rectangle: boundary,
         })
       ) {
-        collisions.push('up')
+        collisions.push("up");
       }
 
       if (
-        !collisions.includes('down') &&
+        !collisions.includes("down") &&
         circleCollidesWithRectangle({
           circle: {
             ...ghost,
             velocity: {
               x: 0,
-              y: ghost.speed
-            }
+              y: ghost.speed,
+            },
           },
-          rectangle: boundary
+          rectangle: boundary,
         })
       ) {
-        collisions.push('down')
+        collisions.push("down");
       }
     });
     if (collisions.length > ghost.prevCollisions.length)
       ghost.prevCollisions = collisions;
 
     if (JSON.stringify(collisions) !== JSON.stringify(ghost.prevCollisions)) {
-
       if (ghost.velocity.x > 0) ghost.prevCollisions.push("right");
       else if (ghost.velocity.x < 0) ghost.prevCollisions.push("left");
       else if (ghost.velocity.y < 0) ghost.prevCollisions.push("up");
