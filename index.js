@@ -1,6 +1,8 @@
 // Get the canvas element and its 2D rendering context
 const canvas = document.querySelector(`canvas`);
 const c = canvas.getContext(`2d`);
+const scoreEl = document.querySelector(`#scoreEl`)
+console.log(scoreEl)
 
 // Set the canvas dimensions to fill the entire screen
 canvas.width = innerWidth;
@@ -32,7 +34,7 @@ class Player {
   constructor({ position, velocity }) {
     this.position = position;
     this.velocity = velocity;
-    this.radius = 15;
+    this.radius = 17.5;
   }
 
   // Method to draw the Pacman object on the screen
@@ -66,8 +68,6 @@ class Pellet {
     c.fill();
     c.closePath;
   }
-
-  // Method to update the position of the Pacman object
 }
 
 const pellets = [];
@@ -81,8 +81,8 @@ const player = new Player({
     y: Boundary.height + Boundary.height / 2,
   },
   velocity: {
-    y: 0,
     x: 0,
+    y: 0,
   },
 });
 
@@ -95,6 +95,7 @@ const keys = {
 };
 
 let lastKey = ``;
+let score = 0;
 
 // Map representing the game layout
 const map = [
@@ -398,10 +399,24 @@ function animate() {
     }
   }
 
-  // Draw each pellet
-  pellets.forEach((pellet) => {
+  //touch pellets
+  for (let i = pellets.length - 1; 0 < i; i--) {
+    const pellet = pellets[i];
     pellet.draw();
-  });
+
+    if (
+      Math.hypot(
+        pellet.position.x - player.position.x,
+        pellet.position.y - player.position.y
+      ) <
+      pellet.radius + player.radius
+    ) {
+      pellets.splice(i, 1);
+      score += 10;
+      scoreEl.innerHTML = score;
+    }
+  }
+
   // Draw and update each boundary
   boundaries.forEach((boundary) => {
     boundary.draw();
