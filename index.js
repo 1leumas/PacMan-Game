@@ -34,15 +34,34 @@ class Player {
     this.position = position;
     this.velocity = velocity;
     this.radius = 15;
+
+    this.radians = 0.7;
+    this.openRate = 0.03;
+    this.rotation = 0
   }
 
   // Method to draw the Pacman object on the screen
   draw() {
+    c.save();
+
+    c.translate(this.position.x, this.position.y)
+    c.rotate(this.rotation)
+    c.translate(-this.position.x, -this.position.y)
+
     c.beginPath();
-    c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
+    c.arc(
+      this.position.x,
+      this.position.y,
+      this.radius,
+      this.radians,
+      Math.PI * 2 - this.radians
+    );
+    c.lineTo(this.position.x, this.position.y);
     c.fillStyle = `yellow`;
     c.fill();
     c.closePath;
+
+    c.restore();
   }
 
   // Method to update the position of the Pacman object
@@ -50,6 +69,10 @@ class Player {
     this.draw();
     this.position.x += this.velocity.x;
     this.position.y += this.velocity.y;
+
+    if (this.radians < 0 || this.radians > 0.7) this.openRate = -this.openRate;
+
+    this.radians += this.openRate;
   }
 }
 
@@ -510,7 +533,7 @@ function animate() {
         ghost.position.x - player.position.x,
         ghost.position.y - player.position.y
       ) <
-        ghost.radius + player.radius
+      ghost.radius + player.radius
     ) {
       if (ghost.scared) {
         ghosts.splice(i, 1);
@@ -521,8 +544,8 @@ function animate() {
   }
 
   //win condition
-  if (pellets.length === 0){
-    cancelAnimationFrame(animationId)
+  if (pellets.length === 0) {
+    cancelAnimationFrame(animationId);
   }
 
   //powerups
