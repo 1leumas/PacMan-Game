@@ -1,12 +1,13 @@
+// Get the canvas element and its 2D rendering context
 const canvas = document.querySelector(`canvas`);
 const c = canvas.getContext(`2d`);
 
-//fill out the whole screen
+// Set the canvas dimensions to fill the entire screen
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
+// Define the Boundary class for creating blue square objects
 class Boundary {
-  //boundary class, to create an object, those are the blue squares.
   static width = 40;
   static height = 40;
 
@@ -15,21 +16,23 @@ class Boundary {
     this.width = 40;
     this.height = 40;
   }
-  //draw method to put it in screen
+
+  // Method to draw the boundary object on the screen
   draw() {
     c.fillStyle = `blue`;
     c.fillRect(this.position.x, this.position.y, this.width, this.height);
   }
 }
 
+// Define the Player class for creating the yellow Pacman object
 class Player {
-  //Player class, to create pacman which has a position and a velocity
   constructor({ position, velocity }) {
     this.position = position;
     this.velocity = velocity;
     this.radius = 15;
   }
-  //draw method to put it in screen
+
+  // Method to draw the Pacman object on the screen
   draw() {
     c.beginPath();
     c.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
@@ -37,6 +40,8 @@ class Player {
     c.fill();
     c.closePath;
   }
+
+  // Method to update the position of the Pacman object
   update() {
     this.draw();
     this.position.x += this.velocity.x;
@@ -44,10 +49,10 @@ class Player {
   }
 }
 
-const boundaries = [
-  //boundaries array, to keep all the boundaries
-];
-//created object player
+// Array to store all the boundaries (blue squares)
+const boundaries = [];
+
+// Create a player object (yellow Pacman)
 const player = new Player({
   position: {
     x: Boundary.width + Boundary.width / 2,
@@ -59,41 +64,34 @@ const player = new Player({
   },
 });
 
+// Object to track the state of keyboard keys
 const keys = {
-  w: {
-    pressed: false,
-  },
-  a: {
-    pressed: false,
-  },
-  s: {
-    pressed: false,
-  },
-  d: {
-    pressed: false,
-  },
+  w: { pressed: false },
+  a: { pressed: false },
+  s: { pressed: false },
+  d: { pressed: false },
 };
 
 let lastKey = ``;
 
+// Map representing the game layout
 const map = [
-  //map
-  [`-`, `-`, `-`, `-`, `-`, `-`],
-  [`-`, ` `, ` `, ` `, ` `, `-`],
-  [`-`, ` `, `-`, `-`, ` `, `-`],
-  [`-`, ` `, ` `, ` `, ` `, `-`],
-  [`-`, `-`, `-`, `-`, `-`, `-`],
+  [`-`, `-`, `-`, `-`, `-`, `-`, `-`],
+  [`-`, ` `, ` `, ` `, ` `, ` `, `-`],
+  [`-`, ` `, `-`, ` `, `-`, ` `, `-`],
+  [`-`, ` `, ` `, ` `, ` `, ` `, `-`],
+  [`-`, ` `, `-`, ` `, `-`, ` `, `-`],
+  [`-`, ` `, ` `, ` `, ` `, ` `, `-`],
+  [`-`, `-`, `-`, `-`, `-`, `-`, `-`],
 ];
 
+// Iterate over each row of the map
 map.forEach((row, index) => {
-  //for each row of the map
+  // Iterate over each symbol in the row
   row.forEach((symbol, jindex) => {
-    //for each symbol in each row
-    switch (
-      //switch case for each row
-      symbol
-    ) {
-      case `-`: // case " - " switch for an boundary object
+    // Create a boundary object for each "-" symbol in the map
+    switch (symbol) {
+      case `-`:
         boundaries.push(
           new Boundary({
             position: {
@@ -107,42 +105,111 @@ map.forEach((row, index) => {
   });
 });
 
+// Function to check collision between a circle and a rectangle
+function circleCollidesWithRectangle({ circle, rectangle }) {
+  return (
+    circle.position.y - circle.radius + circle.velocity.y <=
+      rectangle.position.y + rectangle.height &&
+    circle.position.x + circle.radius + circle.velocity.x >=
+      rectangle.position.x &&
+    circle.position.y + circle.radius + circle.velocity.y >=
+      rectangle.position.y &&
+    circle.position.x - circle.radius + circle.velocity.x <=
+      rectangle.position.x + rectangle.width
+  );
+}
+
+// Function to animate the game
 function animate() {
   requestAnimationFrame(animate);
   c.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Update player velocity based on collision
+  if (keys.w.pressed && lastKey === `w`) {
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        circleCollidesWithRectangle({
+          circle: { ...player, velocity: { x: 0, y: -3 } },
+          rectangle: boundary,
+        })
+      ) {
+        player.velocity.y = 0;
+        break;
+      } else {
+        player.velocity.y = -3;
+      }
+    }
+  } else if (keys.a.pressed && lastKey === `a`) {
+    for (let i = 0; i < boundaries.length; i++) {
+        const boundary = boundaries[i];
+        if (
+          circleCollidesWithRectangle({
+            circle: { ...player, velocity: { x: -3, y: 0 } },
+            rectangle: boundary,
+          })
+        ) {
+          player.velocity.x = 0;
+          break;
+        } else {
+          player.velocity.x = -3;
+        }
+      }
+  } else if (keys.s.pressed && lastKey === `s`) {
+    for (let i = 0; i < boundaries.length; i++) {
+      const boundary = boundaries[i];
+      if (
+        circleCollidesWithRectangle({
+          circle: { ...player, velocity: { x: 0, y: 3 } },
+          rectangle: boundary,
+        })
+      ) {
+        player.velocity.y = 0;
+        break;
+      } else {
+        player.velocity.y = 3;
+      }
+    }
+  } else if (keys.d.pressed && lastKey === `d`) {
+    for (let i = 0; i < boundaries.length; i++) {
+        const boundary = boundaries[i];
+        if (
+          circleCollidesWithRectangle({
+            circle: { ...player, velocity: { x: 3, y: 0 } },
+            rectangle: boundary,
+          })
+        ) {
+          player.velocity.x = 0;
+          break;
+        } else {
+          player.velocity.x = 3;
+        }
+      }
+  }
+
+  // Draw and update each boundary
   boundaries.forEach((boundary) => {
-    //forEach loop to use the method draw in boundaryClass for each boundary within the array
     boundary.draw();
-    //collision
+
     if (
-      player.position.y - player.radius + player.velocity.y <= boundary.position.y + boundary.height &&
-      player.position.x + player.radius + player.velocity.x >= boundary.position.x &&
-      player.position.y + player.radius + player.velocity.y >= boundary.position.y &&
-      player.position.x - player.radius + player.velocity.x <= boundary.position.x + boundary.width
+      circleCollidesWithRectangle({
+        circle: player,
+        rectangle: boundary,
+      })
     ) {
       player.velocity.y = 0;
       player.velocity.x = 0;
     }
   });
-  //put player in game
-  player.update();
-//   player.velocity.y = 0;
-//   player.velocity.x = 0;
 
-  if (keys.w.pressed && lastKey === `w`) {
-    player.velocity.y = -3;
-  } else if (keys.a.pressed && lastKey === `a`) {
-    player.velocity.x = -3;
-  } else if (keys.s.pressed && lastKey === `s`) {
-    player.velocity.y = 3;
-  } else if (keys.d.pressed && lastKey === `d`) {
-    player.velocity.x = 3;
-  }
+  // Update and draw the player (Pacman)
+  player.update();
 }
 
+// Start the animation loop
 animate();
 
-//when key w/a/s/d is pressed add velocity
+// Event listener to handle keydown events
 addEventListener(`keydown`, ({ key }) => {
   switch (key) {
     case `w`:
@@ -164,7 +231,7 @@ addEventListener(`keydown`, ({ key }) => {
   }
 });
 
-//when key w/a/s/d is unpressed remove velocity
+// Event listener to handle keyup events
 addEventListener(`keyup`, ({ key }) => {
   switch (key) {
     case `w`:
