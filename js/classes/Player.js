@@ -43,7 +43,7 @@ class Player {
             ...this,
             velocity: {
               x: 0,
-              y: -3,
+              y: -4,
             },
           },
           rectangle: boundary,
@@ -52,7 +52,7 @@ class Player {
         this.velocity.y = 0;
         break;
       } else {
-        this.velocity.y = -3;
+        this.velocity.y = -4;
       }
     }
   }
@@ -65,7 +65,7 @@ class Player {
           circle: {
             ...this,
             velocity: {
-              x: -3,
+              x: -4,
               y: 0,
             },
           },
@@ -75,7 +75,7 @@ class Player {
         this.velocity.x = 0;
         break;
       } else {
-        this.velocity.x = -3;
+        this.velocity.x = -4;
       }
     }
   }
@@ -89,7 +89,7 @@ class Player {
             ...this,
             velocity: {
               x: 0,
-              y: 3,
+              y: 4,
             },
           },
           rectangle: boundary,
@@ -98,7 +98,7 @@ class Player {
         this.velocity.y = 0;
         break;
       } else {
-        this.velocity.y = 3;
+        this.velocity.y = 4;
       }
     }
   }
@@ -111,7 +111,7 @@ class Player {
           circle: {
             ...this,
             velocity: {
-              x: 3,
+              x: 4,
               y: 0,
             },
           },
@@ -121,7 +121,7 @@ class Player {
         this.velocity.x = 0;
         break;
       } else {
-        this.velocity.x = 3;
+        this.velocity.x = 4;
       }
     }
   }
